@@ -88,7 +88,7 @@ func (this *Database) Put(src io.Reader) (string, error) {
 }
 
 // fetch an object from the store using its position
-func (this *Database) Fetch(pos string, cb func([]byte)) error {
+func (this *Database) Fetch(pos string) (func() []byte, error) {
 
 	// lock the database "for-reading"
 	this.RLock()
@@ -97,17 +97,20 @@ func (this *Database) Fetch(pos string, cb func([]byte)) error {
 	// prepare the required vars for parsing
 	var offset, size int64
 
+	// just a shortcut
+	fn := func() []byte{ return nil }
+
 	// parse the pos
 	fmt.Sscanf(pos, "%d:%d", &offset, &size)
 
 	// is valid offset ?
 	if this.size <= offset {
-		return errors.New("Invalid offset")
+		return fn, errors.New("Invalid offset")
 	}
 
 	// is valid size ?
 	if (size < 1) && (size >= this.size) {
-		return errors.New("Invalid offset")
+		return fn, errors.New("Invalid offset")
 	}
 
 	// declare tha variables that used each iteration
@@ -116,7 +119,7 @@ func (this *Database) Fetch(pos string, cb func([]byte)) error {
 	chunk := int64(1024 * 32)
 
 	// start copying the data
-	for {
+	return func() []byte {
 
 		if (reminder < chunk) {
 			chunk = reminder
@@ -127,17 +130,12 @@ func (this *Database) Fetch(pos string, cb func([]byte)) error {
 		r, e := this.file.ReadAt(buf, next)
 
 		if (e != nil) || (r == 0) {
-			cb(nil)
-			break
+			return nil
 		}
-
-		cb(buf[:r])
 
 		reminder -= int64(r)
 		next += int64(r)
-	}
 
-	// finalize
-	return nil
-
+		return buf[:r]
+	}, nil
 }
