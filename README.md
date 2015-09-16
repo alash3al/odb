@@ -34,20 +34,20 @@ func main(){
   // open a [new] database
   // first param is the database file, second is the database file limit
   // it returns the `Database` pointer and an error "if found"
-	db, e := odb.Open("./data.db", 1024 * 1024 * 2)
+  db, e := odb.Open("./data.db", 1024 * 1024 * 2)
 
   // put a new value into the store
   // it accepts any object that has the `Read()` method
   // i.e: File.Read(), bytes.NewBuffer(), *http.Request.Body ... etc
   // it returns the position `k` and error `e` if found
-	k, e := db.Put(bytes.NewBuffer([]byte("this is my value")))
+  k, e := db.Put(bytes.NewBuffer([]byte("this is my value")))
 
   // fetch the data of the `k`
   // return "func()[]byte" and error "if found"
-	next, err := db.Fetch(k)
+  next, err := db.Fetch(k)
 
   // recive the data ?
-	data := ""
+  data := ""
   
   // loop and fetch the data
 	for {
@@ -60,6 +60,12 @@ func main(){
 	}
 
 	fmt.Println(data)
+
+	fmt.Println("is database full ? - ", db.Full())
+	fmt.Println("What is the database size ? - ", db.Size())
+
+	// close
+	db.Close()
 }
 
 ```
